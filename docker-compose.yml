@@ -1,0 +1,70 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:18
+    container_name: iam-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: iam_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Optional Valkey for distributed caching (uncomment for multi-replica deployments)
+  valkey:
+    image: valkey/valkey:9.0.0-alpine3.22
+    container_name: iam-valkey
+    ports:
+      - "6379:6379"
+    volumes:
+      - valkey_data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  iam-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: iam-server
+    environment:
+      IAM_DATABASE_HOST: postgres
+      IAM_DATABASE_PORT: 5432
+      IAM_DATABASE_USER: postgres
+      IAM_DATABASE_PASSWORD: postgres
+      IAM_DATABASE_DBNAME: iam_db
+      IAM_DATABASE_SSLMODE: disable
+      IAM_SERVER_ADDRESS: :8081
+      # Stateless by default (no caching)
+      # IAM_CACHE_TYPE: none
+      # IAM_CACHE_ENABLED: "false"
+      # For Valkey caching (uncomment and enable Valkey service above)
+      IAM_CACHE_TYPE: redis
+      IAM_CACHE_ENABLED: "true"
+      IAM_CACHE_REDIS_ADDRESS: valkey:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      # Uncomment when using Valkey
+      valkey:
+        condition: service_healthy
+    restart: unless-stopped
+    # For horizontal scaling (uncomment and adjust replica count)
+    # deploy:
+    #   replicas: 3
+
+volumes:
+  postgres_data:
+  valkey_data:

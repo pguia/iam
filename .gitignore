@@ -11,6 +11,13 @@
 # Test binary, built with `go test -c`
 *.test
 
+# Generated proto files
+*.pb.go
+
+# Environment files
+.env
+config.yaml
+
 # Code coverage profiles and other test artifacts
 *.out
 coverage.*

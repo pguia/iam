@@ -1,0 +1,334 @@
+syntax = "proto3";
+
+package iam.v1;
+
+option go_package = "github.com/pguia/iam/api/proto/iam/v1;iamv1";
+
+import "google/protobuf/timestamp.proto";
+
+// IAMService provides authorization and permission management
+service IAMService {
+  // Permission Checking
+  rpc CheckPermission(CheckPermissionRequest) returns (CheckPermissionResponse);
+  rpc BatchCheckPermissions(BatchCheckPermissionsRequest) returns (BatchCheckPermissionsResponse);
+
+  // Policy Management
+  rpc CreatePolicy(CreatePolicyRequest) returns (CreatePolicyResponse);
+  rpc GetPolicy(GetPolicyRequest) returns (GetPolicyResponse);
+  rpc UpdatePolicy(UpdatePolicyRequest) returns (UpdatePolicyResponse);
+  rpc DeletePolicy(DeletePolicyRequest) returns (DeletePolicyResponse);
+  rpc ListPolicies(ListPoliciesRequest) returns (ListPoliciesResponse);
+
+  // Binding Management
+  rpc CreateBinding(CreateBindingRequest) returns (CreateBindingResponse);
+  rpc DeleteBinding(DeleteBindingRequest) returns (DeleteBindingResponse);
+  rpc ListBindings(ListBindingsRequest) returns (ListBindingsResponse);
+  rpc GetEffectivePermissions(GetEffectivePermissionsRequest) returns (GetEffectivePermissionsResponse);
+
+  // Role Management
+  rpc CreateRole(CreateRoleRequest) returns (CreateRoleResponse);
+  rpc GetRole(GetRoleRequest) returns (GetRoleResponse);
+  rpc UpdateRole(UpdateRoleRequest) returns (UpdateRoleResponse);
+  rpc DeleteRole(DeleteRoleRequest) returns (DeleteRoleResponse);
+  rpc ListRoles(ListRolesRequest) returns (ListRolesResponse);
+
+  // Resource Management
+  rpc CreateResource(CreateResourceRequest) returns (CreateResourceResponse);
+  rpc GetResource(GetResourceRequest) returns (GetResourceResponse);
+  rpc UpdateResource(UpdateResourceRequest) returns (UpdateResourceResponse);
+  rpc DeleteResource(DeleteResourceRequest) returns (DeleteResourceResponse);
+  rpc ListResources(ListResourcesRequest) returns (ListResourcesResponse);
+  rpc GetResourceHierarchy(GetResourceHierarchyRequest) returns (GetResourceHierarchyResponse);
+}
+
+// Core Domain Models
+
+message Resource {
+  string id = 1;
+  string type = 2; // e.g., "project", "organization", "bucket"
+  string name = 3;
+  string parent_id = 4; // For hierarchical resources
+  map<string, string> attributes = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+message Permission {
+  string id = 1;
+  string name = 2; // e.g., "storage.buckets.create"
+  string description = 3;
+  string service = 4; // e.g., "storage", "compute"
+  google.protobuf.Timestamp created_at = 5;
+}
+
+message Role {
+  string id = 1;
+  string name = 2; // e.g., "roles/storage.admin"
+  string title = 3;
+  string description = 4;
+  repeated string permission_ids = 5;
+  bool is_custom = 6; // true for custom roles, false for predefined
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+}
+
+message Policy {
+  string id = 1;
+  string resource_id = 2;
+  repeated Binding bindings = 3;
+  string etag = 4; // For optimistic concurrency control
+  int32 version = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+message Binding {
+  string id = 1;
+  string role_id = 2;
+  repeated string members = 3; // e.g., "user:alice@example.com", "group:admins@example.com"
+  Condition condition = 4; // Optional conditional binding
+  google.protobuf.Timestamp created_at = 5;
+}
+
+message Condition {
+  string title = 1;
+  string description = 2;
+  string expression = 3; // CEL expression
+}
+
+// Permission Checking
+
+message CheckPermissionRequest {
+  string principal = 1; // e.g., "user:alice@example.com"
+  string resource_id = 2;
+  string permission = 3; // e.g., "storage.buckets.create"
+  map<string, string> context = 4; // Additional context for condition evaluation
+}
+
+message CheckPermissionResponse {
+  bool allowed = 1;
+  string reason = 2; // Explanation for debugging
+}
+
+message BatchCheckPermissionsRequest {
+  string principal = 1;
+  repeated PermissionCheck checks = 2;
+
+  message PermissionCheck {
+    string resource_id = 1;
+    string permission = 2;
+    map<string, string> context = 3;
+  }
+}
+
+message BatchCheckPermissionsResponse {
+  repeated CheckResult results = 1;
+
+  message CheckResult {
+    bool allowed = 1;
+    string reason = 2;
+  }
+}
+
+// Policy Management
+
+message CreatePolicyRequest {
+  string resource_id = 1;
+  repeated Binding bindings = 2;
+}
+
+message CreatePolicyResponse {
+  Policy policy = 1;
+}
+
+message GetPolicyRequest {
+  string resource_id = 1;
+}
+
+message GetPolicyResponse {
+  Policy policy = 1;
+}
+
+message UpdatePolicyRequest {
+  string resource_id = 1;
+  repeated Binding bindings = 2;
+  string etag = 3; // For optimistic concurrency control
+}
+
+message UpdatePolicyResponse {
+  Policy policy = 1;
+}
+
+message DeletePolicyRequest {
+  string resource_id = 1;
+  string etag = 2;
+}
+
+message DeletePolicyResponse {
+  bool success = 1;
+}
+
+message ListPoliciesRequest {
+  string parent_resource_id = 1;
+  int32 page_size = 2;
+  string page_token = 3;
+}
+
+message ListPoliciesResponse {
+  repeated Policy policies = 1;
+  string next_page_token = 2;
+}
+
+// Binding Management
+
+message CreateBindingRequest {
+  string resource_id = 1;
+  string role_id = 2;
+  repeated string members = 3;
+  Condition condition = 4;
+}
+
+message CreateBindingResponse {
+  Binding binding = 1;
+}
+
+message DeleteBindingRequest {
+  string binding_id = 1;
+}
+
+message DeleteBindingResponse {
+  bool success = 1;
+}
+
+message ListBindingsRequest {
+  string resource_id = 1;
+  string principal = 2; // Optional: filter by principal
+  int32 page_size = 3;
+  string page_token = 4;
+}
+
+message ListBindingsResponse {
+  repeated Binding bindings = 1;
+  string next_page_token = 2;
+}
+
+message GetEffectivePermissionsRequest {
+  string principal = 1;
+  string resource_id = 2;
+}
+
+message GetEffectivePermissionsResponse {
+  repeated string permissions = 1;
+  repeated string roles = 2;
+}
+
+// Role Management
+
+message CreateRoleRequest {
+  string name = 1;
+  string title = 2;
+  string description = 3;
+  repeated string permission_ids = 4;
+}
+
+message CreateRoleResponse {
+  Role role = 1;
+}
+
+message GetRoleRequest {
+  string role_id = 1;
+}
+
+message GetRoleResponse {
+  Role role = 1;
+}
+
+message UpdateRoleRequest {
+  string role_id = 1;
+  string title = 2;
+  string description = 3;
+  repeated string permission_ids = 4;
+}
+
+message UpdateRoleResponse {
+  Role role = 1;
+}
+
+message DeleteRoleRequest {
+  string role_id = 1;
+}
+
+message DeleteRoleResponse {
+  bool success = 1;
+}
+
+message ListRolesRequest {
+  bool include_predefined = 1;
+  int32 page_size = 2;
+  string page_token = 3;
+}
+
+message ListRolesResponse {
+  repeated Role roles = 1;
+  string next_page_token = 2;
+}
+
+// Resource Management
+
+message CreateResourceRequest {
+  string type = 1;
+  string name = 2;
+  string parent_id = 3;
+  map<string, string> attributes = 4;
+}
+
+message CreateResourceResponse {
+  Resource resource = 1;
+}
+
+message GetResourceRequest {
+  string resource_id = 1;
+}
+
+message GetResourceResponse {
+  Resource resource = 1;
+}
+
+message UpdateResourceRequest {
+  string resource_id = 1;
+  string name = 2;
+  map<string, string> attributes = 3;
+}
+
+message UpdateResourceResponse {
+  Resource resource = 1;
+}
+
+message DeleteResourceRequest {
+  string resource_id = 1;
+}
+
+message DeleteResourceResponse {
+  bool success = 1;
+}
+
+message ListResourcesRequest {
+  string parent_id = 1;
+  string type = 2; // Optional: filter by type
+  int32 page_size = 3;
+  string page_token = 4;
+}
+
+message ListResourcesResponse {
+  repeated Resource resources = 1;
+  string next_page_token = 2;
+}
+
+message GetResourceHierarchyRequest {
+  string resource_id = 1;
+}
+
+message GetResourceHierarchyResponse {
+  repeated Resource ancestors = 1;
+  repeated Resource descendants = 2;
+}

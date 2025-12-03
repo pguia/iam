@@ -1,0 +1,29 @@
+server:
+  address: ":8081"
+  port: 8081
+
+database:
+  host: localhost
+  port: 5432
+  user: postgres
+  password: postgres
+  dbname: iam_db
+  sslmode: disable
+  max_conns: 25
+  max_idle: 5
+
+cache:
+  # Cache type: "none" (stateless), "memory" (single instance only), "redis" (stateless, Valkey-compatible)
+  type: none
+  enabled: false        # For stateless deployments, keep disabled
+  ttl_seconds: 300      # 5 minutes
+  max_size: 10000       # Maximum number of cache entries (memory only)
+  cleanup_minutes: 10   # Run cleanup every 10 minutes (memory only)
+
+  # Valkey/Redis configuration (for distributed caching)
+  # Note: Using "redis" type for Valkey (protocol-compatible)
+  redis:
+    address: localhost:6379
+    password: ""
+    db: 0
+    ttl_seconds: 300
