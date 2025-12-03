@@ -1,5 +1,11 @@
 # IAM Chassis
 
+[![Tests](https://github.com/pguia/iam/actions/workflows/test.yml/badge.svg)](https://github.com/pguia/iam/actions/workflows/test.yml)
+[![codecov](https://codecov.io/gh/pguia/iam/branch/main/graph/badge.svg)](https://codecov.io/gh/pguia/iam)
+[![Go Report Card](https://goreportcard.com/badge/github.com/pguia/iam)](https://goreportcard.com/report/github.com/pguia/iam)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/pguia/iam)](https://github.com/pguia/iam)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 A generic, reusable Identity and Access Management (IAM) service inspired by Google Cloud IAM. This chassis provides fine-grained access control with hierarchical resource management, role-based permissions, and conditional access.
 
 ## Features

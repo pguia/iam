@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -37,7 +38,8 @@ func (b *Binding) BeforeCreate(tx *gorm.DB) error {
 // GetMembers unmarshals the Members JSON to a string slice
 func (b *Binding) GetMembers() ([]string, error) {
 	var members []string
-	if err := b.Members.Scan(&members); err != nil {
+	// datatypes.JSON is just []byte, so we can unmarshal directly
+	if err := json.Unmarshal(b.Members, &members); err != nil {
 		return nil, err
 	}
 	return members, nil
