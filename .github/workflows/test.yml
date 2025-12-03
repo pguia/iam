@@ -70,13 +70,9 @@ jobs:
           IAM_CACHE_REDIS_ADDRESS: localhost:6379
         run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
         with:
-          files: ./coverage.out
-          flags: unittests
-          name: codecov-iam
-          fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Generate coverage report
