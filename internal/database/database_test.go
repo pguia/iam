@@ -312,3 +312,39 @@ func TestDatabase_SSLModeOptions(t *testing.T) {
 		})
 	}
 }
+
+func TestIsExtensionExistsError(t *testing.T) {
+	tests := []struct {
+		name     string
+		err      error
+		expected bool
+	}{
+		{
+			name:     "Nil error",
+			err:      nil,
+			expected: false,
+		},
+		{
+			name:     "Extension name index error",
+			err:      fmt.Errorf("ERROR: duplicate key value violates unique constraint \"pg_extension_name_index\" (SQLSTATE 23505)"),
+			expected: true,
+		},
+		{
+			name:     "Extension already exists",
+			err:      fmt.Errorf("ERROR: extension \"pgcrypto\" already exists"),
+			expected: true,
+		},
+		{
+			name:     "Other error",
+			err:      fmt.Errorf("connection refused"),
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := isExtensionExistsError(tt.err)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
