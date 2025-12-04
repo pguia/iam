@@ -3,6 +3,7 @@ package database
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/pguia/iam/internal/config"
 	"github.com/pguia/iam/internal/domain"
@@ -47,12 +48,18 @@ func New(cfg *config.DatabaseConfig) (*Database, error) {
 
 	// Enable UUID extension
 	if err := db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"").Error; err != nil {
-		return nil, fmt.Errorf("failed to enable uuid-ossp extension: %w", err)
+		// Ignore error if extension already exists (race condition in parallel tests)
+		if !isExtensionExistsError(err) {
+			return nil, fmt.Errorf("failed to enable uuid-ossp extension: %w", err)
+		}
 	}
 
 	// Enable pgcrypto for gen_random_uuid()
 	if err := db.Exec("CREATE EXTENSION IF NOT EXISTS \"pgcrypto\"").Error; err != nil {
-		return nil, fmt.Errorf("failed to enable pgcrypto extension: %w", err)
+		// Ignore error if extension already exists (race condition in parallel tests)
+		if !isExtensionExistsError(err) {
+			return nil, fmt.Errorf("failed to enable pgcrypto extension: %w", err)
+		}
 	}
 
 	return &Database{DB: db}, nil
@@ -94,4 +101,16 @@ func (db *Database) Ping() error {
 		return err
 	}
 	return sqlDB.Ping()
+}
+
+// isExtensionExistsError checks if the error is due to an extension already existing
+// This handles race conditions when multiple tests try to create extensions simultaneously
+func isExtensionExistsError(err error) bool {
+	if err == nil {
+		return false
+	}
+	errMsg := err.Error()
+	// Check for duplicate key violation on extension name index (SQLSTATE 23505)
+	return strings.Contains(errMsg, "pg_extension_name_index") ||
+		strings.Contains(errMsg, "extension") && strings.Contains(errMsg, "already exists")
 }
