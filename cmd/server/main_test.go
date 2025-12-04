@@ -42,11 +42,16 @@ func TestInitializeApp_DatabaseConnection(t *testing.T) {
 	require.NotNil(t, app)
 	defer app.Close()
 
-	// Test that database is connected and migrations ran
+	// Get current schema
+	var currentSchema string
+	err = app.Database.DB.Raw("SELECT current_schema()").Scan(&currentSchema).Error
+	require.NoError(t, err)
+
+	// Test that database is connected and migrations ran in the current schema
 	var tableCount int64
-	err = app.Database.DB.Raw("SELECT COUNT(*) FROM information_schema.tables WHERE table_name IN ('resources', 'permissions', 'roles', 'policies', 'bindings', 'conditions')").Scan(&tableCount).Error
+	err = app.Database.DB.Raw("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = ? AND table_name IN ('resources', 'permissions', 'roles', 'policies', 'bindings', 'conditions')", currentSchema).Scan(&tableCount).Error
 	assert.NoError(t, err)
-	assert.Equal(t, int64(6), tableCount, "All 6 tables should exist after migration")
+	assert.Equal(t, int64(6), tableCount, "All 6 tables should exist in schema %s after migration", currentSchema)
 }
 
 func TestInitializeApp_CacheInitialization(t *testing.T) {
@@ -238,7 +243,12 @@ func TestApp_DatabaseMigrations(t *testing.T) {
 	require.NotNil(t, app)
 	defer app.Close()
 
-	// Verify all expected tables exist
+	// Get current schema
+	var currentSchema string
+	err = app.Database.DB.Raw("SELECT current_schema()").Scan(&currentSchema).Error
+	require.NoError(t, err)
+
+	// Verify all expected tables exist in the current schema
 	expectedTables := []string{
 		"resources",
 		"permissions",
@@ -251,11 +261,12 @@ func TestApp_DatabaseMigrations(t *testing.T) {
 	for _, tableName := range expectedTables {
 		var exists bool
 		err := app.Database.DB.Raw(
-			"SELECT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_name = ?)",
+			"SELECT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_schema = ? AND table_name = ?)",
+			currentSchema,
 			tableName,
 		).Scan(&exists).Error
 		require.NoError(t, err)
-		assert.True(t, exists, "Table %s should exist", tableName)
+		assert.True(t, exists, "Table %s should exist in schema %s", tableName, currentSchema)
 	}
 }
 
