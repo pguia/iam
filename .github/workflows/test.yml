@@ -15,8 +15,8 @@ jobs:
       postgres:
         image: postgres:18-alpine
         env:
-          POSTGRES_USER: iam_user
-          POSTGRES_PASSWORD: iam_password
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
           POSTGRES_DB: iam_db
         options: >-
           --health-cmd pg_isready
@@ -62,9 +62,9 @@ jobs:
         env:
           IAM_DATABASE_HOST: localhost
           IAM_DATABASE_PORT: 5432
-          IAM_DATABASE_USER: iam_user
-          IAM_DATABASE_PASSWORD: iam_password
-          IAM_DATABASE_NAME: iam_db
+          IAM_DATABASE_USER: postgres
+          IAM_DATABASE_PASSWORD: postgres
+          IAM_DATABASE_DBNAME: iam_db
           IAM_DATABASE_SSLMODE: disable
           IAM_CACHE_TYPE: redis
           IAM_CACHE_REDIS_ADDRESS: localhost:6379
