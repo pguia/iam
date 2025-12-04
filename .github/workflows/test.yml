@@ -68,12 +68,9 @@ jobs:
           IAM_DATABASE_SSLMODE: disable
           IAM_CACHE_TYPE: redis
           IAM_CACHE_REDIS_ADDRESS: localhost:6379
-        run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+        run: make test-all
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-
-      - name: Generate coverage report
-        run: go tool cover -func=coverage.out
