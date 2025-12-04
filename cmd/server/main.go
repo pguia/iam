@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -12,28 +13,39 @@ import (
 	"github.com/pguia/iam/internal/service"
 )
 
-func main() {
+// App holds all application components
+type App struct {
+	Config              *config.Config
+	Database            *database.Database
+	IAMService          *service.IAMService
+	PermissionEvaluator service.PermissionEvaluator
+	CacheService        service.CacheService
+}
+
+// InitializeApp initializes all application components
+func InitializeApp() (*App, error) {
 	// Load configuration
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatalf("Failed to load config: %v", err)
+		return nil, fmt.Errorf("failed to load config: %w", err)
 	}
 
 	// Initialize database
 	db, err := database.New(&cfg.Database)
 	if err != nil {
-		log.Fatalf("Failed to initialize database: %v", err)
+		return nil, fmt.Errorf("failed to initialize database: %w", err)
 	}
-	defer db.Close()
 
 	// Run migrations
 	if err := db.AutoMigrate(); err != nil {
-		log.Fatalf("Failed to run migrations: %v", err)
+		db.Close()
+		return nil, fmt.Errorf("failed to run migrations: %w", err)
 	}
 
 	// Test database connection
 	if err := db.Ping(); err != nil {
-		log.Fatalf("Failed to ping database: %v", err)
+		db.Close()
+		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
 	log.Println("Database connection established successfully")
@@ -48,7 +60,8 @@ func main() {
 	// Initialize services
 	cacheService, err := service.NewCache(&cfg.Cache)
 	if err != nil {
-		log.Fatalf("Failed to initialize cache: %v", err)
+		db.Close()
+		return nil, fmt.Errorf("failed to initialize cache: %w", err)
 	}
 	log.Printf("Cache initialized: type=%s, enabled=%v", cfg.Cache.Type, cfg.Cache.Enabled)
 
@@ -70,11 +83,31 @@ func main() {
 		cacheService,
 	)
 
-	log.Printf("IAM service initialized: %v", iamService)
+	log.Printf("IAM service initialized successfully")
 
+	return &App{
+		Config:              cfg,
+		Database:            db,
+		IAMService:          iamService,
+		PermissionEvaluator: permissionEvaluator,
+		CacheService:        cacheService,
+	}, nil
+}
+
+// Close cleans up application resources
+func (app *App) Close() error {
+	log.Println("Closing application resources...")
+	if app.Database != nil {
+		return app.Database.Close()
+	}
+	return nil
+}
+
+// Run starts the application and waits for shutdown signal
+func Run(app *App) error {
 	// TODO: Create gRPC server and register IAM service
 	// This will be implemented after proto files are generated
-	log.Printf("IAM service would be listening on %s", cfg.Server.Address)
+	log.Printf("IAM service would be listening on %s", app.Config.Server.Address)
 	log.Println("Note: gRPC server implementation pending proto file generation")
 
 	// For now, just keep the service running
@@ -86,4 +119,17 @@ func main() {
 	<-quit
 
 	log.Println("Shutting down server...")
+	return nil
+}
+
+func main() {
+	app, err := InitializeApp()
+	if err != nil {
+		log.Fatalf("Failed to initialize application: %v", err)
+	}
+	defer app.Close()
+
+	if err := Run(app); err != nil {
+		log.Fatalf("Application error: %v", err)
+	}
 }
