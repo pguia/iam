@@ -15,7 +15,7 @@ type Resource struct {
 	ParentID   *uuid.UUID        `gorm:"type:uuid;index" json:"parent_id,omitempty"`
 	Parent     *Resource         `gorm:"foreignKey:ParentID" json:"parent,omitempty"`
 	Children   []Resource        `gorm:"foreignKey:ParentID" json:"children,omitempty"`
-	Attributes map[string]string `gorm:"type:jsonb" json:"attributes"`
+	Attributes map[string]string `gorm:"type:jsonb;serializer:json" json:"attributes"`
 	Policies   []Policy          `gorm:"foreignKey:ResourceID" json:"policies,omitempty"`
 	CreatedAt  time.Time         `gorm:"not null" json:"created_at"`
 	UpdatedAt  time.Time         `gorm:"not null" json:"updated_at"`
