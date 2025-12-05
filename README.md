@@ -1,9 +1,9 @@
 # IAM Chassis
 
-[![Tests](https://github.com/pguia/iam/actions/workflows/test.yml/badge.svg)](https://github.com/pguia/iam/actions/workflows/test.yml)
-[![codecov](https://codecov.io/gh/pguia/iam/branch/main/graph/badge.svg)](https://codecov.io/gh/pguia/iam)
-[![Go Report Card](https://goreportcard.com/badge/github.com/pguia/iam)](https://goreportcard.com/report/github.com/pguia/iam)
-[![Go Version](https://img.shields.io/github/go-mod/go-version/pguia/iam)](https://github.com/pguia/iam)
+[![Tests](https://github.com/guipguia/iam/actions/workflows/test.yml/badge.svg)](https://github.com/guipguia/iam/actions/workflows/test.yml)
+[![codecov](https://codecov.io/gh/guipguia/iam/branch/main/graph/badge.svg)](https://codecov.io/gh/guipguia/iam)
+[![Go Report Card](https://goreportcard.com/badge/github.com/guipguia/iam)](https://goreportcard.com/report/github.com/guipguia/iam)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/guipguia/iam)](https://github.com/guipguia/iam)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 A generic, reusable Identity and Access Management (IAM) service inspired by Google Cloud IAM. This chassis provides fine-grained access control with hierarchical resource management, role-based permissions, and conditional access.
@@ -220,10 +220,10 @@ database:
 cache:
   # Cache type: "none" (stateless), "memory" (single instance only), "redis" (distributed, Valkey-compatible)
   type: none
-  enabled: false        # For stateless deployments, keep disabled
-  ttl_seconds: 300      # 5 minutes
-  max_size: 10000       # Maximum number of cache entries (memory only)
-  cleanup_minutes: 10   # Run cleanup every 10 minutes (memory only)
+  enabled: false # For stateless deployments, keep disabled
+  ttl_seconds: 300 # 5 minutes
+  max_size: 10000 # Maximum number of cache entries (memory only)
+  cleanup_minutes: 10 # Run cleanup every 10 minutes (memory only)
 
   # Valkey/Redis configuration (for distributed caching)
   # Note: Using "redis" type for Valkey (protocol-compatible)
@@ -279,7 +279,8 @@ go run examples/seed/seed_data.go
 ```
 
 This creates:
-- Common permissions (storage.*, compute.*, iam.*)
+
+- Common permissions (storage._, compute._, iam.\*)
 - Predefined roles (viewer, editor, admin)
 - Sample resources and policies
 
@@ -401,7 +402,7 @@ The easiest way to integrate IAM with the Auth service is using the provided int
 
 ```go
 import (
-    "github.com/pguia/iam/examples/integration"
+    "github.com/guipguia/iam/examples/integration"
 )
 
 // Initialize the chassis integration
@@ -450,7 +451,7 @@ For direct gRPC access without the integration helper:
 
 ```go
 import (
-    iamv1 "github.com/pguia/iam/api/proto/iam/v1"
+    iamv1 "github.com/guipguia/iam/api/proto/iam/v1"
     "google.golang.org/grpc"
     "google.golang.org/grpc/credentials/insecure"
 )
@@ -576,7 +577,7 @@ Distributed caching for high-traffic production deployments:
 
 ```yaml
 cache:
-  type: redis  # Use "redis" type for Valkey (protocol-compatible)
+  type: redis # Use "redis" type for Valkey (protocol-compatible)
   enabled: true
   redis:
     address: valkey:6379
